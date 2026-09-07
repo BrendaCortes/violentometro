@@ -6,6 +6,7 @@ import { Users, ChevronRight, X } from 'lucide-react';
 
 interface PeopleSectionProps {
   refreshKey: number;
+  weekStart: string;
   onSelectPerson: (aggressorId: string | null) => void;
   selectedPersonId: string | null;
 }
@@ -21,13 +22,16 @@ function getLevelColor(avg: number): string {
   return '#ef4444';
 }
 
-export function PeopleSection({ refreshKey, onSelectPerson, selectedPersonId }: PeopleSectionProps) {
+export function PeopleSection({ refreshKey, weekStart, onSelectPerson, selectedPersonId }: PeopleSectionProps) {
   const [aggressors, setAggressors] = useState<AggressorWithStats[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [aggrResult, sitResult] = await Promise.all([getAggressors(), getSituations()]);
+    const [aggrResult, sitResult] = await Promise.all([
+      getAggressors(weekStart),
+      getSituations(),
+    ]);
 
     if (!aggrResult.data || !sitResult.data) {
       setAggressors([]);
@@ -47,7 +51,7 @@ export function PeopleSection({ refreshKey, onSelectPerson, selectedPersonId }: 
 
     setAggressors(stats);
     setLoading(false);
-  }, []);
+  }, [weekStart]);
 
   useEffect(() => {
     loadData();

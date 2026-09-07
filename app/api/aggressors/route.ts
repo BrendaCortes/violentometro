@@ -10,7 +10,33 @@ async function getOwnerId(): Promise<string | null> {
   return rows[0]?.id ?? null;
 }
 
-export async function GET() {
+function getCurrentWeekStart(): Date {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  d.setUTCDate(d.getUTCDate() + diffToMonday);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const weekStartParam = searchParams.get('week_start');
+
+  let weekStart: Date;
+  if (weekStartParam) {
+    weekStart = new Date(weekStartParam);
+    if (isNaN(weekStart.getTime())) {
+      return NextResponse.json({ error: 'week_start inválido' }, { status: 400 });
+    }
+  } else {
+    weekStart = getCurrentWeekStart();
+  }
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+  weekEnd.setUTCHours(23, 59, 59, 999);
+
   try {
     const ownerId = await getOwnerId();
     if (!ownerId) {
@@ -18,8 +44,26 @@ export async function GET() {
     }
 
     const aggressors = await sql`
-      SELECT * FROM aggressors WHERE user_id = ${ownerId} ORDER BY name ASC
+      SELECT
+        a.id,
+        a.user_id,
+        a.name,
+        a.created_at,
+        COALESCE(SUM(CASE
+          WHEN s.created_at >= ${weekStart.toISOString()}::timestamptz
+          AND s.created_at <= ${weekEnd.toISOString()}::timestamptz
+          THEN s.severity
+          ELSE 0
+        END), 0)::int AS brendapoints
+      FROM aggressors a
+      LEFT JOIN situations s
+        ON s.aggressor_id = a.id
+        AND s.user_id = ${ownerId}
+      WHERE a.user_id = ${ownerId}
+      GROUP BY a.id, a.user_id, a.name, a.created_at
+      ORDER BY a.name ASC
     ` as Aggressor[];
+
     return NextResponse.json({ data: aggressors });
   } catch (err) {
     console.error('Error fetching aggressors:', err);

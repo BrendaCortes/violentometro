@@ -52,8 +52,9 @@ export async function deleteSituation(id: string): Promise<{ error: string | nul
 
 // ─── Aggressors ───────────────────────────────────────────────────────────────
 
-export async function getAggressors(): Promise<{ data: Aggressor[] | null; error: string | null }> {
-  return fetchApi<Aggressor[]>('/api/aggressors');
+export async function getAggressors(weekStart?: string): Promise<{ data: Aggressor[] | null; error: string | null }> {
+  const qs = weekStart ? `?week_start=${encodeURIComponent(weekStart)}` : '';
+  return fetchApi<Aggressor[]>(`/api/aggressors${qs}`);
 }
 
 export async function createAggressor(name: string): Promise<{ data: Aggressor | null; error: string | null }> {

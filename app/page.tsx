@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { Header } from '@/components/Header';
-import { TrafficLight, type SeverityLevel } from '@/components/TrafficLight';
-import { Thermometer } from '@/components/Thermometer';
-import { RegisterSituationModal } from '@/components/RegisterSituationModal';
-import { LoginPromptModal } from '@/components/LoginPromptModal';
-import { PeopleSection } from '@/components/PeopleSection';
-import { ChartsSection } from '@/components/ChartsSection';
-import { HistorySection } from '@/components/HistorySection';
-import { Heart, Calendar, Film, ArrowRight } from 'lucide-react';
-import { getSituations } from '@/lib/api';
-import { getCurrentWeek, isInWeek } from '@/lib/week';
-import type { Situation } from '@/lib/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { Header } from "@/components/Header";
+import { TrafficLight, type SeverityLevel } from "@/components/TrafficLight";
+import { Thermometer } from "@/components/Thermometer";
+import { RegisterSituationModal } from "@/components/RegisterSituationModal";
+import { LoginPromptModal } from "@/components/LoginPromptModal";
+import { PeopleSection } from "@/components/PeopleSection";
+import { ChartsSection } from "@/components/ChartsSection";
+import { HistorySection } from "@/components/HistorySection";
+import { Heart, Calendar, Film, ArrowRight, Bot } from "lucide-react";
+import { getSituations } from "@/lib/api";
+import { getCurrentWeek, isInWeek } from "@/lib/week";
+import type { Situation } from "@/lib/types";
 
 function AppContent() {
   const { user } = useAuth();
@@ -24,11 +24,20 @@ function AppContent() {
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [weekRange, setWeekRange] = useState(() => getCurrentWeek());
+  const prevWeekKey = useRef<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setWeekRange(getCurrentWeek()), 60_000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const key = weekRange.start.toISOString();
+    if (prevWeekKey.current !== null && prevWeekKey.current !== key) {
+      setRefreshKey((k) => k + 1);
+    }
+    prevWeekKey.current = key;
+  }, [weekRange]);
 
   const loadSituations = useCallback(async () => {
     const { data, error } = await getSituations();
@@ -56,19 +65,42 @@ function AppContent() {
 
   const weeklySituations = useMemo(
     () => situations.filter((s) => isInWeek(s.created_at, weekRange)),
-    [situations, weekRange]
+    [situations, weekRange],
   );
 
-  const totalSeverity = weeklySituations.reduce((sum, s) => sum + s.severity, 0);
+  const totalSeverity = weeklySituations.reduce(
+    (sum, s) => sum + s.severity,
+    0,
+  );
   const level = Math.min(100, totalSeverity);
-  const severityLevel: SeverityLevel = level < 33 ? 'green' : level < 66 ? 'yellow' : 'red';
+  const severityLevel: SeverityLevel =
+    level < 33 ? "green" : level < 66 ? "yellow" : "red";
   const isDecember = new Date().getMonth() === 11;
 
   const levelMessage = useMemo(() => {
-    if (weeklySituations.length === 0) return { title: 'Aún sin broncas', subtitle: 'Vamos empezando la semana', color: '#22c55e' };
-    if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Ando vibrandoo alto mi compa', color: '#22c55e' };
-    if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Eh, no se pase de verga mi compa', color: '#f59e0b' };
-    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima, cuidese mucho carnal', color: '#ef4444' };
+    if (weeklySituations.length === 0)
+      return {
+        title: "Aún sin broncas",
+        subtitle: "Vamos empezando la semana",
+        color: "#22c55e",
+      };
+    if (severityLevel === "green")
+      return {
+        title: "Nivel tranquilo",
+        subtitle: "Ando vibrandoo alto mi compa",
+        color: "#22c55e",
+      };
+    if (severityLevel === "yellow")
+      return {
+        title: "Nivel de alerta",
+        subtitle: "Eh, no se pase de verga mi compa",
+        color: "#f59e0b",
+      };
+    return {
+      title: "Nivel de emergencia",
+      subtitle: "Brenda esta emputadisima, cuidese mucho carnal",
+      color: "#ef4444",
+    };
   }, [weeklySituations.length, severityLevel]);
 
   return (
@@ -80,9 +112,10 @@ function AppContent() {
           <Calendar className="w-3 h-3" />
           Semana {weekRange.label}
         </div>
-        <div className='flex items-center justify-center mb-5'>
+        <div className="flex items-center justify-center mb-5">
           <h2 className="text-3xl sm:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
-            ¿Cuánto has molestado a <span className="text-orange-500">Brenda esta semana?</span>
+            ¿Cuánto has molestado a{" "}
+            <span className="text-orange-500">Brenda esta semana?</span>
           </h2>
         </div>
 
@@ -91,11 +124,22 @@ function AppContent() {
           <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-emerald-50/60 blur-3xl pointer-events-none" />
 
           <div className="relative text-center mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: `${levelMessage.color}15`, color: levelMessage.color }}>
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: levelMessage.color }} />
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
+              style={{
+                backgroundColor: `${levelMessage.color}15`,
+                color: levelMessage.color,
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{ backgroundColor: levelMessage.color }}
+              />
               {levelMessage.title}
             </div>
-            <p className="text-xs text-slate-400 mt-2">{levelMessage.subtitle}</p>
+            <p className="text-xs text-slate-400 mt-2">
+              {levelMessage.subtitle}
+            </p>
           </div>
 
           <div className="relative flex items-center justify-center gap-12 sm:gap-28">
@@ -109,7 +153,9 @@ function AppContent() {
               onClick={handleRegisterClick}
               className="group px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-sm shadow-lg shadow-orange-200 hover:shadow-xl hover:shadow-orange-300 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-2"
             >
-              <span className="text-xl leading-none group-hover:rotate-90 transition-transform">+</span>
+              <span className="text-xl leading-none group-hover:rotate-90 transition-transform">
+                +
+              </span>
               Registrar situación
             </button>
           </div>
@@ -117,13 +163,37 @@ function AppContent() {
 
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { value: weeklySituations.length, label: 'Situaciones', color: 'text-orange-500', bg: 'bg-orange-50' },
-            { value: totalSeverity, label: 'Puntos', color: 'text-rose-500', bg: 'bg-rose-50' },
-            { value: new Set(weeklySituations.map((s) => s.aggressor_id).filter(Boolean)).size, label: 'Personas', color: 'text-indigo-500', bg: 'bg-indigo-50' },
+            {
+              value: weeklySituations.length,
+              label: "Situaciones",
+              color: "text-orange-500",
+              bg: "bg-orange-50",
+            },
+            {
+              value: totalSeverity,
+              label: "Puntos",
+              color: "text-rose-500",
+              bg: "bg-rose-50",
+            },
+            {
+              value: new Set(
+                weeklySituations.map((s) => s.aggressor_id).filter(Boolean),
+              ).size,
+              label: "Personas",
+              color: "text-indigo-500",
+              bg: "bg-indigo-50",
+            },
           ].map((stat) => (
-            <div key={stat.label} className={`${stat.bg} rounded-2xl p-3 sm:p-4 text-center`}>
-              <p className={`text-xl sm:text-2xl font-extrabold ${stat.color}`}>{stat.value}</p>
-              <p className="text-[10px] sm:text-xs text-slate-500 font-semibold mt-0.5">{stat.label}</p>
+            <div
+              key={stat.label}
+              className={`${stat.bg} rounded-2xl p-3 sm:p-4 text-center`}
+            >
+              <p className={`text-xl sm:text-2xl font-extrabold ${stat.color}`}>
+                {stat.value}
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-semibold mt-0.5">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>
@@ -132,6 +202,7 @@ function AppContent() {
           <div className="space-y-6">
             <PeopleSection
               refreshKey={refreshKey}
+              weekStart={weekRange.start.toISOString()}
               onSelectPerson={setSelectedPersonId}
               selectedPersonId={selectedPersonId}
             />
@@ -142,13 +213,19 @@ function AppContent() {
               onChanged={() => setRefreshKey((k) => k + 1)}
             />
           </div>
-          <ChartsSection refreshKey={refreshKey} selectedPersonId={selectedPersonId} />
+          <ChartsSection
+            refreshKey={refreshKey}
+            selectedPersonId={selectedPersonId}
+          />
         </div>
 
         <div className="mt-8 p-4 rounded-2xl bg-slate-100/70 flex items-start gap-3 max-w-2xl mx-auto">
           <Heart className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500 leading-relaxed">
-            <strong className="text-slate-600">Un recordatorio amable:</strong> si algo te incomoda o te hace sentir en peligro, tu sensación es válida. Considera hablar con alguien de confianza o buscar ayuda profesional.
+            <strong className="text-slate-600">Un recordatorio amable:</strong>{" "}
+            si algo te incomoda o te hace sentir en peligro, tu sensación es
+            válida. Considera hablar con alguien de confianza o buscar ayuda
+            profesional.
           </p>
         </div>
 
@@ -167,7 +244,8 @@ function AppContent() {
       </main>
 
       <footer className="text-center pb-8 pt-2 text-xs text-slate-400">
-        Tu información es privada · Cuídate mucho
+        Hecho con <Heart className="w-3 h-3" /> y Claude 
+        <Bot className="size-3" />
       </footer>
 
       {user ? (
@@ -177,7 +255,10 @@ function AppContent() {
           onSaved={() => setRefreshKey((k) => k + 1)}
         />
       ) : (
-        <LoginPromptModal open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} />
+        <LoginPromptModal
+          open={loginPromptOpen}
+          onClose={() => setLoginPromptOpen(false)}
+        />
       )}
     </div>
   );
