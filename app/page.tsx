@@ -67,7 +67,7 @@ function AppContent() {
     if (weeklySituations.length === 0) return { title: 'Aún sin broncas', subtitle: 'Vamos empezando la semana', color: '#22c55e' };
     if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Ando vibrandoo alto mi compa', color: '#22c55e' };
     if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Eh, no se pase de verga mi compa', color: '#f59e0b' };
-    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima, cuidese mucho carnal!!!', color: '#ef4444' };
+    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima, cuidese mucho carnal', color: '#ef4444' };
   }, [weeklySituations.length, severityLevel]);
 
   return (

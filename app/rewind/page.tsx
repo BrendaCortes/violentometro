@@ -100,7 +100,7 @@ function RewindContent() {
     setLoading(true);
     getRewind(year).then(({ data: result, error }) => {
       if (cancelled) return;
-      setData(!error && result ? result.data : []);
+      setData(!error && result ? result : []);
       setLoading(false);
     });
     return () => {

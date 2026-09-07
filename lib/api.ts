@@ -73,7 +73,7 @@ export interface RewindEntry {
   avg_severity: number;
 }
 
-export async function getRewind(year?: number): Promise<{ data: { year: number; data: RewindEntry[] } | null; error: string | null }> {
+export async function getRewind(year?: number): Promise<{ data: RewindEntry[] | null; error: string | null }> {
   const qs = year ? `?year=${year}` : '';
-  return fetchApi<{ year: number; data: RewindEntry[] }>(`/api/rewind${qs}`);
+  return fetchApi<RewindEntry[]>(`/api/rewind${qs}`);
 }
