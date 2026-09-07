@@ -64,6 +64,13 @@ export async function createAggressor(name: string): Promise<{ data: Aggressor |
   });
 }
 
+export async function deleteAggressor(id: string): Promise<{ error: string | null }> {
+  const result = await fetchApi<{ success: boolean }>(`/api/aggressors?id=${id}`, {
+    method: 'DELETE',
+  });
+  return { error: result.error };
+}
+
 // ─── Rewind ────────────────────────────────────────────────────────────────────
 
 export interface RewindEntry {

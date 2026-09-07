@@ -102,3 +102,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Error al crear persona' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  const userId = (session?.user as { id?: string })?.id;
+  if (!userId) {
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+  }
+
+  try {
+    const existing = await sql`
+      SELECT id FROM aggressors WHERE id = ${id} AND user_id = ${userId}
+    ` as Array<{ id: string }>;
+
+    if (existing.length === 0) {
+      return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
+    }
+
+    // Cascade-delete their situations so the brendapoints (person counter)
+    // and the general counter both reset for that person.
+    await sql.transaction([
+      sql`DELETE FROM situations WHERE aggressor_id = ${id} AND user_id = ${userId}`,
+      sql`DELETE FROM aggressors WHERE id = ${id} AND user_id = ${userId}`,
+    ]);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting aggressor:', err);
+    return NextResponse.json({ error: 'Error al eliminar' }, { status: 500 });
+  }
+}

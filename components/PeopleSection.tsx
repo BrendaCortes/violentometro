@@ -1,14 +1,16 @@
 /* eslint-disable react-hooks/set-state-in-effect -- data fetching with useEffect is standard */
 import { useState, useEffect, useCallback } from 'react';
 import type { Aggressor, Situation } from '@/lib/types';
-import { getAggressors, getSituations } from '@/lib/api';
-import { Users, ChevronRight, X } from 'lucide-react';
+import { getAggressors, getSituations, deleteAggressor } from '@/lib/api';
+import { Users, ChevronRight, X, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface PeopleSectionProps {
   refreshKey: number;
   weekStart: string;
   onSelectPerson: (aggressorId: string | null) => void;
   selectedPersonId: string | null;
+  onChanged?: () => void;
 }
 
 interface AggressorWithStats extends Aggressor {
@@ -22,9 +24,11 @@ function getLevelColor(avg: number): string {
   return '#ef4444';
 }
 
-export function PeopleSection({ refreshKey, weekStart, onSelectPerson, selectedPersonId }: PeopleSectionProps) {
+export function PeopleSection({ refreshKey, weekStart, onSelectPerson, selectedPersonId, onChanged }: PeopleSectionProps) {
+  const { user } = useAuth();
   const [aggressors, setAggressors] = useState<AggressorWithStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -56,6 +60,25 @@ export function PeopleSection({ refreshKey, weekStart, onSelectPerson, selectedP
   useEffect(() => {
     loadData();
   }, [refreshKey, loadData]);
+
+  // Auto-cancel pending delete after 3s.
+  useEffect(() => {
+    if (!pendingDeleteId) return;
+    const t = setTimeout(() => setPendingDeleteId(null), 3000);
+    return () => clearTimeout(t);
+  }, [pendingDeleteId]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (pendingDeleteId !== id) {
+      setPendingDeleteId(id);
+      return;
+    }
+    setPendingDeleteId(null);
+    if (selectedPersonId === id) onSelectPerson(null);
+    await deleteAggressor(id);
+    if (onChanged) onChanged();
+    loadData();
+  }, [pendingDeleteId, selectedPersonId, onSelectPerson, onChanged, loadData]);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">
@@ -95,44 +118,79 @@ export function PeopleSection({ refreshKey, weekStart, onSelectPerson, selectedP
             const color = getLevelColor(a.avgSeverity);
             const bp = a.brendapoints;
             const fillPercent = Math.min(100, bp);
+            const isPendingDelete = pendingDeleteId === a.id;
 
             return (
-              <button
+              <div
                 key={a.id}
-                onClick={() => onSelectPerson(isSelected ? null : a.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${
+                className={`w-full flex items-center gap-2 p-3 rounded-2xl border-2 transition-all text-left ${
                   isSelected
                     ? 'border-orange-300 bg-orange-50'
                     : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200'
                 }`}
               >
-                {/* Avatar */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                  style={{ backgroundColor: color }}
+                <button
+                  onClick={() => onSelectPerson(isSelected ? null : a.id)}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  {a.name.charAt(0).toUpperCase()}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-slate-800 truncate">{a.name}</p>
-                  <p className="text-xs text-slate-400">
-                    <span className="font-bold" style={{ color }}>{bp}/100</span> brendapoints
-                    {a.count > 0 && ` · ${a.count} ${a.count === 1 ? 'situación' : 'situaciones'}`}
-                  </p>
-                </div>
-
-                {/* Brendapoints bar */}
-                <div className="w-14 h-2 rounded-full bg-slate-100 overflow-hidden shrink-0">
+                  {/* Avatar */}
                   <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${fillPercent}%`, backgroundColor: color }}
-                  />
-                </div>
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                    style={{ backgroundColor: color }}
+                  >
+                    {a.name.charAt(0).toUpperCase()}
+                  </div>
 
-                <ChevronRight className={`w-4 h-4 text-slate-300 shrink-0 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
-              </button>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-slate-800 truncate">{a.name}</p>
+                    <p className="text-xs text-slate-400">
+                      <span className="font-bold" style={{ color }}>{bp}/100</span> brendapoints
+                      {a.count > 0 && ` · ${a.count} ${a.count === 1 ? 'situación' : 'situaciones'}`}
+                    </p>
+                  </div>
+
+                  {/* Brendapoints bar */}
+                  <div className="w-14 h-2 rounded-full bg-slate-100 overflow-hidden shrink-0">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${fillPercent}%`, backgroundColor: color }}
+                    />
+                  </div>
+
+                  <ChevronRight className={`w-4 h-4 text-slate-300 shrink-0 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+                </button>
+
+                {/* Delete (two-step confirm) */}
+                {user && (
+                  isPendingDelete ? (
+                    <div className="flex items-center gap-1 shrink-0 animate-pop-in">
+                      <button
+                        onClick={() => handleDelete(a.id)}
+                        className="px-2.5 py-1.5 rounded-xl bg-rose-500 text-white text-[11px] font-bold hover:bg-rose-600 shadow-sm"
+                        title={`Borrar ${a.name} y sus ${a.count} ${a.count === 1 ? 'situación' : 'situaciones'}`}
+                      >
+                        Borrar
+                      </button>
+                      <button
+                        onClick={() => setPendingDeleteId(null)}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-[11px] font-bold hover:bg-slate-200"
+                        title="Cancelar"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleDelete(a.id)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500 bg-slate-100 shrink-0 transition-colors"
+                      title={`Eliminar a ${a.name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )
+                )}
+              </div>
             );
           })}
         </div>

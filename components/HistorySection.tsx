@@ -28,6 +28,7 @@ export function HistorySection({ refreshKey, selectedPersonId, onClearFilter, on
   const [situations, setSituations] = useState<Situation[]>([]);
   const [aggressors, setAggressors] = useState<Map<string, Aggressor>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -49,11 +50,23 @@ export function HistorySection({ refreshKey, selectedPersonId, onClearFilter, on
     loadData();
   }, [refreshKey, selectedPersonId, loadData]);
 
+  // Auto-cancel pending delete after 3s if user doesn't confirm.
+  useEffect(() => {
+    if (!pendingDeleteId) return;
+    const t = setTimeout(() => setPendingDeleteId(null), 3000);
+    return () => clearTimeout(t);
+  }, [pendingDeleteId]);
+
   const handleDelete = useCallback(async (id: string) => {
+    if (pendingDeleteId !== id) {
+      setPendingDeleteId(id);
+      return;
+    }
+    setPendingDeleteId(null);
     await deleteSituation(id);
     loadData();
     onChanged();
-  }, [loadData, onChanged]);
+  }, [pendingDeleteId, loadData, onChanged]);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">
@@ -130,15 +143,34 @@ export function HistorySection({ refreshKey, selectedPersonId, onClearFilter, on
                   <p className="text-[10px] text-slate-300 mt-1">{formatDate(s.created_at)}</p>
                 </div>
 
-                {/* Delete */}
+                {/* Delete (two-step confirm) */}
                 {user && (
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 shrink-0"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  pendingDeleteId === s.id ? (
+                    <div className="flex items-center gap-1 shrink-0 animate-pop-in">
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        className="px-2.5 py-1.5 rounded-xl bg-rose-500 text-white text-[11px] font-bold hover:bg-rose-600 shadow-sm"
+                        title="Confirmar borrado"
+                      >
+                        Borrar
+                      </button>
+                      <button
+                        onClick={() => setPendingDeleteId(null)}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-[11px] font-bold hover:bg-slate-200"
+                        title="Cancelar"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500 bg-slate-100 shrink-0 transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )
                 )}
               </div>
             );

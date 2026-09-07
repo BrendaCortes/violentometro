@@ -267,6 +267,7 @@ function AppContent() {
               weekStart={weekRange.start.toISOString()}
               onSelectPerson={setSelectedPersonId}
               selectedPersonId={selectedPersonId}
+              onChanged={() => setRefreshKey((k) => k + 1)}
             />
             <HistorySection
               refreshKey={refreshKey}
