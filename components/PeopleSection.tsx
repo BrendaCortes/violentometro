@@ -12,7 +12,6 @@ interface PeopleSectionProps {
 
 interface AggressorWithStats extends Aggressor {
   count: number;
-  totalSeverity: number;
   avgSeverity: number;
 }
 
@@ -42,7 +41,6 @@ export function PeopleSection({ refreshKey, onSelectPerson, selectedPersonId }: 
       return {
         ...a,
         count: situations.length,
-        totalSeverity,
         avgSeverity: situations.length > 0 ? totalSeverity / situations.length : 0,
       };
     });
@@ -91,7 +89,8 @@ export function PeopleSection({ refreshKey, onSelectPerson, selectedPersonId }: 
           {aggressors.map((a) => {
             const isSelected = selectedPersonId === a.id;
             const color = getLevelColor(a.avgSeverity);
-            const fillPercent = Math.min(100, (a.avgSeverity / 10) * 100);
+            const bp = a.brendapoints;
+            const fillPercent = Math.min(100, bp);
 
             return (
               <button
@@ -115,13 +114,13 @@ export function PeopleSection({ refreshKey, onSelectPerson, selectedPersonId }: 
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-slate-800 truncate">{a.name}</p>
                   <p className="text-xs text-slate-400">
-                    {a.count} {a.count === 1 ? 'situación' : 'situaciones'}
-                    {a.count > 0 && ` · promedio ${a.avgSeverity.toFixed(1)}/10`}
+                    <span className="font-bold" style={{ color }}>{bp}/100</span> brendapoints
+                    {a.count > 0 && ` · ${a.count} ${a.count === 1 ? 'situación' : 'situaciones'}`}
                   </p>
                 </div>
 
-                {/* Level bar */}
-                <div className="w-12 h-2 rounded-full bg-slate-100 overflow-hidden shrink-0">
+                {/* Brendapoints bar */}
+                <div className="w-14 h-2 rounded-full bg-slate-100 overflow-hidden shrink-0">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${fillPercent}%`, backgroundColor: color }}

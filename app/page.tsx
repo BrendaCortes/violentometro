@@ -60,7 +60,7 @@ function AppContent() {
   );
 
   const totalSeverity = weeklySituations.reduce((sum, s) => sum + s.severity, 0);
-  const level = Math.min(100, totalSeverity * 2.5);
+  const level = Math.min(100, totalSeverity);
   const severityLevel: SeverityLevel = level < 33 ? 'green' : level < 66 ? 'yellow' : 'red';
   const isDecember = new Date().getMonth() === 11;
 
@@ -139,6 +139,7 @@ function AppContent() {
               refreshKey={refreshKey}
               selectedPersonId={selectedPersonId}
               onClearFilter={() => setSelectedPersonId(null)}
+              onChanged={() => setRefreshKey((k) => k + 1)}
             />
           </div>
           <ChartsSection refreshKey={refreshKey} selectedPersonId={selectedPersonId} />

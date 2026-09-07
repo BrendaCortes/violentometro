@@ -10,6 +10,7 @@ interface HistorySectionProps {
   refreshKey: number;
   selectedPersonId: string | null;
   onClearFilter: () => void;
+  onChanged: () => void;
 }
 
 function getSeverityColor(sev: number): string {
@@ -22,7 +23,7 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export function HistorySection({ refreshKey, selectedPersonId, onClearFilter }: HistorySectionProps) {
+export function HistorySection({ refreshKey, selectedPersonId, onClearFilter, onChanged }: HistorySectionProps) {
   const { user } = useAuth();
   const [situations, setSituations] = useState<Situation[]>([]);
   const [aggressors, setAggressors] = useState<Map<string, Aggressor>>(new Map());
@@ -51,7 +52,8 @@ export function HistorySection({ refreshKey, selectedPersonId, onClearFilter }: 
   const handleDelete = useCallback(async (id: string) => {
     await deleteSituation(id);
     loadData();
-  }, [loadData]);
+    onChanged();
+  }, [loadData, onChanged]);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">

@@ -18,6 +18,7 @@ export interface Aggressor {
   id: string;
   user_id: string;
   name: string;
+  brendapoints: number;
   created_at: string;
 }
 
