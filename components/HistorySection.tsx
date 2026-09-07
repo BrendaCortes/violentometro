@@ -4,6 +4,7 @@ import { AGGRESSION_TYPES } from '@/lib/types';
 import type { Situation, Aggressor } from '@/lib/types';
 import { getSituations, getAggressors, deleteSituation } from '@/lib/api';
 import { History, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface HistorySectionProps {
   refreshKey: number;
@@ -22,6 +23,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function HistorySection({ refreshKey, selectedPersonId, onClearFilter }: HistorySectionProps) {
+  const { user } = useAuth();
   const [situations, setSituations] = useState<Situation[]>([]);
   const [aggressors, setAggressors] = useState<Map<string, Aggressor>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -127,12 +129,15 @@ export function HistorySection({ refreshKey, selectedPersonId, onClearFilter }: 
                 </div>
 
                 {/* Delete */}
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {user && (
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 shrink-0"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             );
           })}

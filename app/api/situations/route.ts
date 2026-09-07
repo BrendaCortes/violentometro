@@ -3,29 +3,33 @@ import { auth } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import type { Situation } from '@/lib/types';
 
-export async function GET(request: Request) {
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-  if (!userId) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  }
+async function getOwnerId(): Promise<string | null> {
+  const rows = await sql`SELECT id FROM users LIMIT 1` as { id: string }[];
+  return rows[0]?.id ?? null;
+}
 
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const aggressorId = searchParams.get('aggressor_id');
 
   try {
+    const ownerId = await getOwnerId();
+    if (!ownerId) {
+      return NextResponse.json({ data: [] });
+    }
+
     let situations: Situation[];
 
     if (aggressorId) {
       situations = await sql`
         SELECT * FROM situations
-        WHERE user_id = ${userId} AND aggressor_id = ${aggressorId}
+        WHERE user_id = ${ownerId} AND aggressor_id = ${aggressorId}
         ORDER BY created_at ASC
       ` as Situation[];
     } else {
       situations = await sql`
         SELECT * FROM situations
-        WHERE user_id = ${userId}
+        WHERE user_id = ${ownerId}
         ORDER BY created_at ASC
       ` as Situation[];
     }

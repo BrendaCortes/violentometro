@@ -8,7 +8,6 @@ interface AuthContextType {
   user: { id: string; email: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -37,35 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        return { error: data.error ?? 'Error al crear la cuenta' };
-      }
-      // Auto sign in after signup
-      const result = await nextAuthSignIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-      if (result?.error) {
-        return { error: 'Cuenta creada pero no se pudo iniciar sesión automáticamente' };
-      }
-      return { error: null };
-    } catch {
-      return { error: 'Error al crear la cuenta' };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
     await nextAuthSignOut({ callbackUrl: '/' });
   };
@@ -77,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user as { id: string; email: string } | null,
         loading: status === 'loading' || loading,
         signIn,
-        signUp,
         signOut,
       }}
     >

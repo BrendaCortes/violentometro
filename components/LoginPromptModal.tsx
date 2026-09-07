@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import { LogIn, UserPlus, X, Shield } from 'lucide-react';
+import { LogIn, X, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 interface LoginPromptModalProps {
@@ -8,8 +8,7 @@ interface LoginPromptModalProps {
 }
 
 export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -21,16 +20,9 @@ export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const fn = mode === 'signin' ? signIn : signUp;
-    const { error } = await fn(email, password);
+    const { error } = await signIn(email, password);
     if (error) {
-      setError(
-        error.includes('Invalid login')
-          ? 'Correo o contraseña incorrectos'
-          : error.includes('already registered')
-          ? 'Este correo ya está registrado. Intenta iniciar sesión.'
-          : error
-      );
+      setError(error);
     } else {
       onClose();
     }
@@ -48,7 +40,7 @@ export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-base font-extrabold text-slate-800">Necesitas una cuenta</h2>
+            <h2 className="text-base font-extrabold text-slate-800">Iniciar sesión</h2>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
             <X className="w-4 h-4 text-slate-600" />
@@ -56,27 +48,8 @@ export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
         </div>
 
         <p className="text-sm text-slate-500 mb-5">
-          Para registrar situaciones necesitas iniciar sesión o crear una cuenta. Así tus registros quedan privados y vinculados a ti.
+          Para registrar situaciones necesitas iniciar sesión.
         </p>
-
-        <div className="flex gap-2 mb-4 bg-slate-100 rounded-2xl p-1">
-          <button
-            onClick={() => { setMode('signin'); setError(null); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-              mode === 'signin' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
-            }`}
-          >
-            Iniciar sesión
-          </button>
-          <button
-            onClick={() => { setMode('signup'); setError(null); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-              mode === 'signup' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
-            }`}
-          >
-            Crear cuenta
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -90,10 +63,9 @@ export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
           <input
             type="password"
             required
-            minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Contraseña (mín. 6 caracteres)"
+            placeholder="Contraseña"
             className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-orange-400 focus:outline-none text-slate-800 text-sm font-medium placeholder:text-slate-300"
           />
 
@@ -112,8 +84,8 @@ export function LoginPromptModal({ open, onClose }: LoginPromptModalProps) {
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                {mode === 'signin' ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                {mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
+                <LogIn className="w-4 h-4" />
+                Entrar
               </>
             )}
           </button>

@@ -3,16 +3,20 @@ import { auth } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import type { Aggressor } from '@/lib/types';
 
-export async function GET() {
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-  if (!userId) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  }
+async function getOwnerId(): Promise<string | null> {
+  const rows = await sql`SELECT id FROM users LIMIT 1` as { id: string }[];
+  return rows[0]?.id ?? null;
+}
 
+export async function GET() {
   try {
+    const ownerId = await getOwnerId();
+    if (!ownerId) {
+      return NextResponse.json({ data: [] });
+    }
+
     const aggressors = await sql`
-      SELECT * FROM aggressors WHERE user_id = ${userId} ORDER BY name ASC
+      SELECT * FROM aggressors WHERE user_id = ${ownerId} ORDER BY name ASC
     ` as Aggressor[];
     return NextResponse.json({ data: aggressors });
   } catch (err) {
