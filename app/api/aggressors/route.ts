@@ -49,20 +49,26 @@ export async function GET(request: Request) {
         a.user_id,
         a.name,
         a.created_at,
+        GREATEST(0, 100 - 3 * COALESCE(SUM(CASE
+          WHEN s.created_at >= ${weekStart.toISOString()}::timestamptz
+          AND s.created_at <= ${weekEnd.toISOString()}::timestamptz
+          THEN s.severity
+          ELSE 0
+        END), 0))::int AS brendapoints,
         COALESCE(SUM(CASE
           WHEN s.created_at >= ${weekStart.toISOString()}::timestamptz
           AND s.created_at <= ${weekEnd.toISOString()}::timestamptz
           THEN s.severity
           ELSE 0
-        END), 0)::int AS brendapoints
+        END), 0)::int AS weekly_severity
       FROM aggressors a
       LEFT JOIN situations s
         ON s.aggressor_id = a.id
         AND s.user_id = ${ownerId}
       WHERE a.user_id = ${ownerId}
       GROUP BY a.id, a.user_id, a.name, a.created_at
-      ORDER BY a.name ASC
-    ` as Aggressor[];
+      ORDER BY brendapoints ASC, weekly_severity DESC, a.name ASC
+    ` as Array<Aggressor & { weekly_severity: number }>;
 
     return NextResponse.json({ data: aggressors });
   } catch (err) {

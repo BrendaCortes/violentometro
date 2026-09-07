@@ -11,10 +11,72 @@ import { LoginPromptModal } from "@/components/LoginPromptModal";
 import { PeopleSection } from "@/components/PeopleSection";
 import { ChartsSection } from "@/components/ChartsSection";
 import { HistorySection } from "@/components/HistorySection";
-import { Heart, Calendar, Film, ArrowRight, Bot } from "lucide-react";
-import { getSituations } from "@/lib/api";
+import { Heart, Calendar, Film, ArrowRight, Bot, Skull } from "lucide-react";
+import { getAggressors, getSituations } from "@/lib/api";
 import { getCurrentWeek, isInWeek } from "@/lib/week";
-import type { Situation } from "@/lib/types";
+import type { Situation, Aggressor } from "@/lib/types";
+
+type HatedAggressor = Aggressor & { weekly_severity: number };
+
+function MostHatedCard({ weekStart, refreshKey }: { weekStart: string; refreshKey: number }) {
+  const [top, setTop] = useState<HatedAggressor | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getAggressors(weekStart).then(({ data }) => {
+      if (cancelled) return;
+      const list = (data ?? []) as HatedAggressor[];
+      const candidate = list.find((a) => a.weekly_severity > 0) ?? null;
+      setTop(candidate);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [weekStart, refreshKey]);
+
+  if (loading) {
+    return (
+      <section className="h-28 rounded-3xl bg-white border border-slate-100 animate-pulse" />
+    );
+  }
+
+  if (!top) return null;
+
+  const damage = top.weekly_severity * 3;
+  const maxedOut = top.brendapoints === 0;
+
+  return (
+    <section className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-3xl shadow-sm border border-rose-100 p-5 sm:p-6">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shrink-0 shadow-sm">
+          <Skull className="w-7 h-7 text-white" strokeWidth={2.5} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600">
+            El más odiado de la semana
+          </p>
+          <p className="font-extrabold text-xl text-slate-800 mt-0.5 truncate">
+            {top.name}
+          </p>
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+            Te quitó{" "}
+            <strong className="text-rose-600">{damage} brendapoints</strong> esta
+            semana. Te quedan{" "}
+            <strong className="text-slate-800">{top.brendapoints}/100</strong>.
+          </p>
+          {maxedOut && (
+            <p className="text-xs font-bold text-rose-600 mt-1.5">
+              Ya se pasó de verga 🚫
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function AppContent() {
   const { user } = useAuth();
@@ -212,6 +274,10 @@ function AppContent() {
               onClearFilter={() => setSelectedPersonId(null)}
               onChanged={() => setRefreshKey((k) => k + 1)}
             />
+            <MostHatedCard
+              weekStart={weekRange.start.toISOString()}
+              refreshKey={refreshKey}
+            />
           </div>
           <ChartsSection
             refreshKey={refreshKey}
@@ -243,9 +309,9 @@ function AppContent() {
         )}
       </main>
 
-      <footer className="text-center pb-8 pt-2 text-xs text-slate-400">
-        Hecho con <Heart className="w-3 h-3" /> y Claude 
-        <Bot className="size-3" />
+      <footer className="text-center pb-8 pt-2 text-xs text-slate-400 whitespace-nowrap">
+        Hecho con <Heart className="w-3 h-3 inline" /> y Claude
+        <Bot className="size-3 inline ml-0.5" />
       </footer>
 
       {user ? (
