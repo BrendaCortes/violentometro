@@ -4,7 +4,9 @@ import { sql } from '@/lib/db';
 import type { Aggressor } from '@/lib/types';
 
 async function getOwnerId(): Promise<string | null> {
-  const rows = await sql`SELECT id FROM users LIMIT 1` as { id: string }[];
+  const email = process.env.OWNER_EMAIL;
+  if (!email) return null;
+  const rows = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1` as { id: string }[];
   return rows[0]?.id ?? null;
 }
 

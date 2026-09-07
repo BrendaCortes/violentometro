@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
 
@@ -13,7 +12,7 @@ if (!email || !password) {
 const sql = neon(process.env.DATABASE_URL);
 const passwordHash = await bcrypt.hash(password, 12);
 
-const existing = await sql`SELECT id FROM users WHERE email = ${email}` as { id: string }[];
+const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
 
 if (existing.length > 0) {
   await sql`UPDATE users SET password_hash = ${passwordHash} WHERE email = ${email}`;

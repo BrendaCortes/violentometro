@@ -10,8 +10,9 @@ import { LoginPromptModal } from '@/components/LoginPromptModal';
 import { PeopleSection } from '@/components/PeopleSection';
 import { ChartsSection } from '@/components/ChartsSection';
 import { HistorySection } from '@/components/HistorySection';
-import { Heart } from 'lucide-react';
+import { Heart, Calendar } from 'lucide-react';
 import { getSituations } from '@/lib/api';
+import { getCurrentWeek, isInWeek } from '@/lib/week';
 import type { Situation } from '@/lib/types';
 
 function AppContent() {
@@ -21,6 +22,12 @@ function AppContent() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [weekRange, setWeekRange] = useState(() => getCurrentWeek());
+
+  useEffect(() => {
+    const interval = setInterval(() => setWeekRange(getCurrentWeek()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadSituations = useCallback(async () => {
     const { data, error } = await getSituations();
@@ -46,22 +53,32 @@ function AppContent() {
     else setLoginPromptOpen(true);
   }
 
-  const totalSeverity = situations.reduce((sum, s) => sum + s.severity, 0);
+  const weeklySituations = useMemo(
+    () => situations.filter((s) => isInWeek(s.created_at, weekRange)),
+    [situations, weekRange]
+  );
+
+  const totalSeverity = weeklySituations.reduce((sum, s) => sum + s.severity, 0);
   const level = Math.min(100, totalSeverity * 2.5);
   const severityLevel: SeverityLevel = level < 33 ? 'green' : level < 66 ? 'yellow' : 'red';
 
   const levelMessage = useMemo(() => {
-    if (situations.length === 0) return { title: 'Tu medidor está en calma', subtitle: 'Aún no hay situaciones registradas', color: '#22c55e' };
+    if (weeklySituations.length === 0) return { title: 'Tu medidor está en calma', subtitle: 'Sin situaciones esta semana', color: '#22c55e' };
     if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Pero cada sensación importa', color: '#22c55e' };
     if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Tu bienestar merece atención', color: '#f59e0b' };
     return { title: 'Nivel elevado', subtitle: 'Considera buscar apoyo y acompañamiento', color: '#ef4444' };
-  }, [situations.length, severityLevel]);
+  }, [weeklySituations.length, severityLevel]);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Header onRegisterClick={handleRegisterClick} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-100 text-[11px] font-semibold text-slate-500 mb-3 shadow-sm">
+          <Calendar className="w-3 h-3" />
+          Semana {weekRange.label}
+        </div>
+
         <section className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-5 sm:p-8 mb-6 overflow-hidden relative">
           <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-orange-50/60 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-emerald-50/60 blur-3xl pointer-events-none" />
@@ -93,9 +110,9 @@ function AppContent() {
 
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { value: situations.length, label: 'Situaciones', color: 'text-orange-500', bg: 'bg-orange-50' },
+            { value: weeklySituations.length, label: 'Situaciones', color: 'text-orange-500', bg: 'bg-orange-50' },
             { value: totalSeverity, label: 'Puntos', color: 'text-rose-500', bg: 'bg-rose-50' },
-            { value: new Set(situations.map((s) => s.aggressor_id).filter(Boolean)).size, label: 'Personas', color: 'text-indigo-500', bg: 'bg-indigo-50' },
+            { value: new Set(weeklySituations.map((s) => s.aggressor_id).filter(Boolean)).size, label: 'Personas', color: 'text-indigo-500', bg: 'bg-indigo-50' },
           ].map((stat) => (
             <div key={stat.label} className={`${stat.bg} rounded-2xl p-3 sm:p-4 text-center`}>
               <p className={`text-xl sm:text-2xl font-extrabold ${stat.color}`}>{stat.value}</p>

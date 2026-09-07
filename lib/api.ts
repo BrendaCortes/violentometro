@@ -62,3 +62,18 @@ export async function createAggressor(name: string): Promise<{ data: Aggressor |
     body: JSON.stringify({ name }),
   });
 }
+
+// ─── Rewind ────────────────────────────────────────────────────────────────────
+
+export interface RewindEntry {
+  aggressor_id: string;
+  name: string;
+  incidents: number;
+  total_severity: number;
+  avg_severity: number;
+}
+
+export async function getRewind(year?: number): Promise<{ data: { year: number; data: RewindEntry[] } | null; error: string | null }> {
+  const qs = year ? `?year=${year}` : '';
+  return fetchApi<{ year: number; data: RewindEntry[] }>(`/api/rewind${qs}`);
+}
