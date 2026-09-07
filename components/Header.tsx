@@ -16,7 +16,7 @@ export function Header({ onRegisterClick }: HeaderProps) {
             <Gauge className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-800 leading-none">Violentómetro</h1>
+            <h1 className="text-base font-extrabold text-slate-800 leading-none">Brendanómetro</h1>
             {user && (
               <p className="text-[10px] text-slate-400 mt-0.5 leading-none">
                 {user.email}

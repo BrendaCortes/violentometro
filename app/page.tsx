@@ -63,10 +63,10 @@ function AppContent() {
   const severityLevel: SeverityLevel = level < 33 ? 'green' : level < 66 ? 'yellow' : 'red';
 
   const levelMessage = useMemo(() => {
-    if (weeklySituations.length === 0) return { title: 'Tu medidor está en calma', subtitle: 'Sin situaciones esta semana', color: '#22c55e' };
-    if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Pero cada sensación importa', color: '#22c55e' };
-    if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Tu bienestar merece atención', color: '#f59e0b' };
-    return { title: 'Nivel elevado', subtitle: 'Considera buscar apoyo y acompañamiento', color: '#ef4444' };
+    if (weeklySituations.length === 0) return { title: 'Aún sin broncas', subtitle: 'Vamos empezando la semana', color: '#22c55e' };
+    if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Ando vibrandoo alto mi compa', color: '#22c55e' };
+    if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Eh, no se pase de verga mi compa', color: '#f59e0b' };
+    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima cuidese mucho carnal', color: '#ef4444' };
   }, [weeklySituations.length, severityLevel]);
 
   return (
@@ -77,6 +77,11 @@ function AppContent() {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-100 text-[11px] font-semibold text-slate-500 mb-3 shadow-sm">
           <Calendar className="w-3 h-3" />
           Semana {weekRange.label}
+        </div>
+        <div className='flex items-center justify-center mb-5'>
+          <h2 className="text-3xl sm:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
+            ¿Cuánto has molestado a <span className="text-orange-500">Brenda esta semana?</span>
+          </h2>
         </div>
 
         <section className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-5 sm:p-8 mb-6 overflow-hidden relative">
