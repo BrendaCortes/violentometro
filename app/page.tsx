@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
 import { TrafficLight, type SeverityLevel } from '@/components/TrafficLight';
@@ -10,7 +11,7 @@ import { LoginPromptModal } from '@/components/LoginPromptModal';
 import { PeopleSection } from '@/components/PeopleSection';
 import { ChartsSection } from '@/components/ChartsSection';
 import { HistorySection } from '@/components/HistorySection';
-import { Heart, Calendar } from 'lucide-react';
+import { Heart, Calendar, Film, ArrowRight } from 'lucide-react';
 import { getSituations } from '@/lib/api';
 import { getCurrentWeek, isInWeek } from '@/lib/week';
 import type { Situation } from '@/lib/types';
@@ -66,7 +67,7 @@ function AppContent() {
     if (weeklySituations.length === 0) return { title: 'Aún sin broncas', subtitle: 'Vamos empezando la semana', color: '#22c55e' };
     if (severityLevel === 'green') return { title: 'Nivel tranquilo', subtitle: 'Ando vibrandoo alto mi compa', color: '#22c55e' };
     if (severityLevel === 'yellow') return { title: 'Nivel de alerta', subtitle: 'Eh, no se pase de verga mi compa', color: '#f59e0b' };
-    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima cuidese mucho carnal', color: '#ef4444' };
+    return { title: 'Nivel de emergencia', subtitle: 'Brenda esta emputadisima, cuidese mucho carnal!!!', color: '#ef4444' };
   }, [weeklySituations.length, severityLevel]);
 
   return (
@@ -147,6 +148,17 @@ function AppContent() {
           <p className="text-xs text-slate-500 leading-relaxed">
             <strong className="text-slate-600">Un recordatorio amable:</strong> si algo te incomoda o te hace sentir en peligro, tu sensación es válida. Considera hablar con alguien de confianza o buscar ayuda profesional.
           </p>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <Link
+            href="/rewind"
+            className="group inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-sm shadow-lg shadow-orange-200 hover:shadow-xl hover:scale-[1.03] active:scale-[0.98]"
+          >
+            <Film className="w-4 h-4" />
+            Rewind del año
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </div>
       </main>
 
