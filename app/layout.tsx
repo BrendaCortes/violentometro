@@ -9,8 +9,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Violentómetro — Registra y visualiza tu nivel de bienestar",
-  description: "Una herramienta privada y segura para registrar situaciones, identificar patrones y visualizar tu nivel de bienestar emocional.",
+  title: "Brendanómetro — Andese con cuidado pai",
+  description: "Una herramienta para medir cuánto has molestado a Brenda esta semana y al que se pase de verga se lo lleva el diablo.",
   icons: {
     icon: "/icon.svg",
   },
