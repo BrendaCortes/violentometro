@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Violentómetro — Registra y visualiza tu nivel de bienestar",
   description: "Una herramienta privada y segura para registrar situaciones, identificar patrones y visualizar tu nivel de bienestar emocional.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
   },
 };
 
